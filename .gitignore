@@ -1,0 +1,11 @@
+# Ignore virtual environment
+venv/
+
+# Ignore logs directory
+logs/
+
+# Ignore session files
+*.session
+
+# Ignore config file with sensitive data
+config.py
