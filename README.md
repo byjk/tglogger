@@ -13,7 +13,7 @@ This project is a Python-based application that monitors your Telegram account f
 
 1. **Clone the Repository**:
    ```bash
-   git clone https://github.com/yourusername/tglogger.git
+   git clone https://github.com/byjk/tglogger.git
    cd tglogger
    ```
 
