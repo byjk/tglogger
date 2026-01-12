@@ -48,12 +48,24 @@ def cleanup_old_messages():
     messages_to_remove = []
     
     for message_id, message_data in message_history.items():
-        if isinstance(message_data, tuple) and len(message_data) >= 2:
+        if isinstance(message_data, tuple) and len(message_data) >= 3:
             try:
                 message_date_str = message_data[0]
                 # Parse the date string (format: 'YYYY-MM-DD HH:MM:SS')
                 message_date = datetime.strptime(message_date_str, '%Y-%m-%d %H:%M:%S')
-                
+                 
+                if message_date < five_hours_ago:
+                    messages_to_remove.append(message_id)
+            except (ValueError, IndexError):
+                # If date parsing fails, keep the message
+                continue
+        elif isinstance(message_data, tuple) and len(message_data) >= 2:
+            # Handle old format (date, text) for backward compatibility
+            try:
+                message_date_str = message_data[0]
+                # Parse the date string (format: 'YYYY-MM-DD HH:MM:SS')
+                message_date = datetime.strptime(message_date_str, '%Y-%m-%d %H:%M:%S')
+                 
                 if message_date < five_hours_ago:
                     messages_to_remove.append(message_id)
             except (ValueError, IndexError):
@@ -70,13 +82,15 @@ def cleanup_old_messages():
     logger.info("Performing hourly cleanup of old messages")
 
 # Function to log deleted messages
-def log_deleted_message(chat_id, chat_title, message_id, message_text, deleted_at):
+def log_deleted_message(chat_id, chat_title, message_id, message_text, deleted_at, username=None):
     """Log deleted messages to a file."""
     ensure_log_dir()
     
     # Create a log entry
+    username_info = f"From User: {username}\n" if username else ""
     log_entry = (
         f"Deleted Message in Chat: {chat_title} (ID: {chat_id})\n"
+        f"{username_info}"
         f"Message ID: {message_id}\n"
         f"Message: {message_text}\n"
         f"Deleted At: {deleted_at}\n"
@@ -110,13 +124,15 @@ def log_error(error_message):
     logger.error(f"Logged error: {error_message}")
 
 # Function to log received messages
-def log_received_message(chat_id, chat_title, message_id, message_text, received_at):
+def log_received_message(chat_id, chat_title, message_id, message_text, received_at, username=None):
     """Log received messages to a file."""
     ensure_log_dir()
     
     # Create a log entry
+    username_info = f"From User: {username}\n" if username else ""
     log_entry = (
         f"Received Message in Chat: {chat_title} (ID: {chat_id})\n"
+        f"{username_info}"
         f"Message ID: {message_id}\n"
         f"Message: {message_text}\n"
         f"Received At: {received_at}\n"
@@ -159,14 +175,15 @@ async def handle_deleted_message(event):
         chat_id = event.chat_id
         chat_title = event.chat.title if hasattr(event.chat, 'title') else "Private Chat"
         message_id = event.deleted_id
-        message_data = message_history.get(message_id, ("No date", "No text content"))
-        message_text = message_data[1] if isinstance(message_data, tuple) else message_data
+        message_data = message_history.get(message_id, ("No date", "No text content", None))
+        message_text = message_data[1] if isinstance(message_data, tuple) and len(message_data) >= 2 else message_data
+        username = message_data[2] if isinstance(message_data, tuple) and len(message_data) >= 3 else None
         deleted_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         
         # Remove message from global dictionary
         message_history.pop(message_id, None)
         
-        log_deleted_message(chat_id, chat_title, message_id, message_text, deleted_at)
+        log_deleted_message(chat_id, chat_title, message_id, message_text, deleted_at, username)
     except Exception as e:
         log_error(f"Error in handle_deleted_message: {str(e)}")
 
@@ -180,13 +197,23 @@ async def handle_received_message(event):
         message_text = event.message.text if hasattr(event.message, 'text') else "No text content"
         received_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         
+        # Extract username from sender
+        username = None
+        if hasattr(event.message, 'sender') and event.message.sender:
+            if hasattr(event.message.sender, 'username') and event.message.sender.username:
+                username = event.message.sender.username
+            elif hasattr(event.message.sender, 'first_name'):
+                username = event.message.sender.first_name
+                if hasattr(event.message.sender, 'last_name') and event.message.sender.last_name:
+                    username += f" {event.message.sender.last_name}"
+        
         # Clean up old messages (function handles hourly logic internally)
         cleanup_old_messages()
         
-        # Store message in global dictionary as tuple (date, text)
-        message_history[message_id] = (received_at, message_text)
+        # Store message in global dictionary as tuple (date, text, username)
+        message_history[message_id] = (received_at, message_text, username)
         
-        log_received_message(chat_id, chat_title, message_id, message_text, received_at)
+        log_received_message(chat_id, chat_title, message_id, message_text, received_at, username)
     except Exception as e:
         log_error(f"Error in handle_received_message: {str(e)}")
 
@@ -197,15 +224,17 @@ async def handle_edited_message(event):
         chat_id = event.chat_id
         chat_title = event.chat.title if hasattr(event.chat, 'title') else "Private Chat"
         message_id = event.message.id
-        old_message_data = message_history.get(message_id, ("No date", "No old text content"))
-        old_message_text = old_message_data[1] if isinstance(old_message_data, tuple) else old_message_data
+        old_message_data = message_history.get(message_id, ("No date", "No old text content", None))
+        old_message_text = old_message_data[1] if isinstance(old_message_data, tuple) and len(old_message_data) >= 2 else old_message_data
         new_message_text = event.message.text if hasattr(event.message, 'text') else "No text content"
         if (old_message_text == new_message_text):
             return
         edited_at = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
         
-        # Update message in global dictionary as tuple (date, text)
-        message_history[message_id] = (edited_at, new_message_text)
+        # Update message in global dictionary as tuple (date, text, username)
+        # Get the username from the old message data if available
+        old_username = old_message_data[2] if isinstance(old_message_data, tuple) and len(old_message_data) >= 3 else None
+        message_history[message_id] = (edited_at, new_message_text, old_username)
         
         log_edited_message(chat_id, chat_title, message_id, old_message_text, new_message_text, edited_at)
     except Exception as e:
