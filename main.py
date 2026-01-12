@@ -98,7 +98,7 @@ def log_deleted_message(chat_id, chat_title, message_id, message_text, deleted_a
     )
     
     # Write to log file
-    log_file_path = os.path.join(LOG_DIR, f"deleted_messages_{chat_id}.log")
+    log_file_path = os.path.join(LOG_DIR, f"{chat_id}_deleted_messages.log")
     with open(log_file_path, 'a', encoding='utf-8') as log_file:
         log_file.write(log_entry)
     
@@ -140,7 +140,7 @@ def log_received_message(chat_id, chat_title, message_id, message_text, received
     )
     
     # Write to log file
-    log_file_path = os.path.join(LOG_DIR, f"received_messages_{chat_id}.log")
+    log_file_path = os.path.join(LOG_DIR, f"{chat_id}_received_messages.log")
     with open(log_file_path, 'a', encoding='utf-8') as log_file:
         log_file.write(log_entry)
     
@@ -162,7 +162,7 @@ def log_edited_message(chat_id, chat_title, message_id, old_message_text, new_me
     )
     
     # Write to log file
-    log_file_path = os.path.join(LOG_DIR, f"edited_messages_{chat_id}.log")
+    log_file_path = os.path.join(LOG_DIR, f"{chat_id}_edited_messages.log")
     with open(log_file_path, 'a', encoding='utf-8') as log_file:
         log_file.write(log_entry)
     
@@ -172,9 +172,14 @@ def log_edited_message(chat_id, chat_title, message_id, old_message_text, new_me
 async def handle_deleted_message(event):
     """Handle deleted messages."""
     try:
+        message_id = event.deleted_id
+        
+        # Check if message exists in message_history, if not, do nothing
+        if message_id not in message_history:
+            return
+        
         chat_id = event.chat_id
         chat_title = event.chat.title if hasattr(event.chat, 'title') else "Private Chat"
-        message_id = event.deleted_id
         message_data = message_history.get(message_id, ("No date", "No text content", None))
         message_text = message_data[1] if isinstance(message_data, tuple) and len(message_data) >= 2 else message_data
         username = message_data[2] if isinstance(message_data, tuple) and len(message_data) >= 3 else None
@@ -221,9 +226,14 @@ async def handle_received_message(event):
 async def handle_edited_message(event):
     """Handle edited messages."""
     try:
+        message_id = event.message.id
+        
+        # Check if message exists in message_history, if not, do nothing
+        if message_id not in message_history:
+            return
+        
         chat_id = event.chat_id
         chat_title = event.chat.title if hasattr(event.chat, 'title') else "Private Chat"
-        message_id = event.message.id
         old_message_data = message_history.get(message_id, ("No date", "No old text content", None))
         old_message_text = old_message_data[1] if isinstance(old_message_data, tuple) and len(old_message_data) >= 2 else old_message_data
         new_message_text = event.message.text if hasattr(event.message, 'text') else "No text content"
