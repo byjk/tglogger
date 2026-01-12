@@ -181,6 +181,7 @@ async def handle_deleted_message(event):
         chat_id = event.chat_id
         
         # Check if chat_id is in allowed list, if not, do nothing
+        # If ALLOWED_CHAT_IDS is empty, log all chats
         if ALLOWED_CHAT_IDS and chat_id not in ALLOWED_CHAT_IDS:
             return
         chat_title = event.chat.title if hasattr(event.chat, 'title') else "Private Chat"
@@ -203,6 +204,7 @@ async def handle_received_message(event):
         chat_id = event.chat_id
         
         # Check if chat_id is in allowed list, if not, do nothing
+        # If ALLOWED_CHAT_IDS is empty, log all chats
         if ALLOWED_CHAT_IDS and chat_id not in ALLOWED_CHAT_IDS:
             return
         
@@ -244,6 +246,7 @@ async def handle_edited_message(event):
         chat_id = event.chat_id
         
         # Check if chat_id is in allowed list, if not, do nothing
+        # If ALLOWED_CHAT_IDS is empty, log all chats
         if ALLOWED_CHAT_IDS and chat_id not in ALLOWED_CHAT_IDS:
             return
         chat_title = event.chat.title if hasattr(event.chat, 'title') else "Private Chat"

@@ -28,8 +28,9 @@ SESSION_NAME = "session_name"
 # Directory for storing logs
 LOG_DIR = "logs"
 
-# List of allowed chat IDs to monitor (empty list = no chats will be logged)
-# Example: ALLOWED_CHAT_IDS = [123456789, 987654321] or ALLOWED_CHAT_IDS = []
+# List of allowed chat IDs to monitor (empty list = log all chats)
+# Example: ALLOWED_CHAT_IDS = [123456789, 987654321] to log only specific chats
+#          or ALLOWED_CHAT_IDS = [] to log all chats
 ALLOWED_CHAT_IDS = []
 
 # Telegram DC settings
