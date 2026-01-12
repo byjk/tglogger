@@ -28,6 +28,10 @@ SESSION_NAME = "session_name"
 # Directory for storing logs
 LOG_DIR = "logs"
 
+# List of allowed chat IDs to monitor (empty list = no chats will be logged)
+# Example: ALLOWED_CHAT_IDS = [123456789, 987654321] or ALLOWED_CHAT_IDS = []
+ALLOWED_CHAT_IDS = []
+
 # Telegram DC settings
 DC_ID = 2
 DC_IP = "149.154.167.50"

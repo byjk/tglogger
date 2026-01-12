@@ -8,7 +8,7 @@ import logging
 import os
 from datetime import datetime, timedelta
 from telethon import TelegramClient, events
-from config import API_ID, API_HASH, PHONE_NUMBER, TG_PASSWORD, SESSION_NAME, LOG_DIR, DC_ID, DC_IP, DC_PORT
+from config import API_ID, API_HASH, PHONE_NUMBER, TG_PASSWORD, SESSION_NAME, LOG_DIR, DC_ID, DC_IP, DC_PORT, ALLOWED_CHAT_IDS
 
 # Global dictionary to store message history
 message_history = {}
@@ -179,6 +179,10 @@ async def handle_deleted_message(event):
             return
         
         chat_id = event.chat_id
+        
+        # Check if chat_id is in allowed list, if not, do nothing
+        if ALLOWED_CHAT_IDS and chat_id not in ALLOWED_CHAT_IDS:
+            return
         chat_title = event.chat.title if hasattr(event.chat, 'title') else "Private Chat"
         message_data = message_history.get(message_id, ("No date", "No text content", None))
         message_text = message_data[1] if isinstance(message_data, tuple) and len(message_data) >= 2 else message_data
@@ -197,6 +201,11 @@ async def handle_received_message(event):
     """Handle received messages."""
     try:
         chat_id = event.chat_id
+        
+        # Check if chat_id is in allowed list, if not, do nothing
+        if ALLOWED_CHAT_IDS and chat_id not in ALLOWED_CHAT_IDS:
+            return
+        
         chat_title = event.chat.title if hasattr(event.chat, 'title') else "Private Chat"
         message_id = event.message.id
         message_text = event.message.text if hasattr(event.message, 'text') else "No text content"
@@ -233,6 +242,10 @@ async def handle_edited_message(event):
             return
         
         chat_id = event.chat_id
+        
+        # Check if chat_id is in allowed list, if not, do nothing
+        if ALLOWED_CHAT_IDS and chat_id not in ALLOWED_CHAT_IDS:
+            return
         chat_title = event.chat.title if hasattr(event.chat, 'title') else "Private Chat"
         old_message_data = message_history.get(message_id, ("No date", "No old text content", None))
         old_message_text = old_message_data[1] if isinstance(old_message_data, tuple) and len(old_message_data) >= 2 else old_message_data
