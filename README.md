@@ -61,12 +61,12 @@ This project is a Python-based application that monitors your Telegram account f
 
 All logs are stored in the `logs` directory, which is created automatically when the application starts. The logs are categorized as follows:
 
-- **Deleted Messages**: `logs/deleted_messages_{chat_id}.log`
-- **Edited Messages**: `logs/edited_messages_{chat_id}.log`
-- **Received Messages**: `logs/received_messages_{chat_id}.log`
+- **Deleted Messages**: `logs/{chat_id}_deleted_messages.log`
+- **Edited Messages**: `logs/{chat_id}_edited_messages.log`
+- **Received Messages**: `logs/{chat_id}_received_messages.log`
 - **Errors**: `logs/errors.log`
 
-Each log file contains detailed information about the event, including the chat title, message ID, message content, and timestamp.
+Each log file contains detailed information about the event, including the chat title, message ID, message content, username (if available), and timestamp.
 
 ## Configuration
 
@@ -78,6 +78,7 @@ The `config.py` file contains all the necessary settings for the application:
 - `TG_PASSWORD`: Your Telegram password (if you have two-factor authentication enabled).
 - `SESSION_NAME`: The name of the session file.
 - `LOG_DIR`: The directory where logs will be stored.
+- `ALLOWED_CHAT_IDS`: A list of chat IDs to monitor. If empty, all chats will be logged. If specific chat IDs are provided, only those chats will be monitored and logged.
 - `DC_ID`: The Telegram Data Center ID.
 - `DC_IP`: The Telegram Data Center IP address.
 - `DC_PORT`: The Telegram Data Center port.
