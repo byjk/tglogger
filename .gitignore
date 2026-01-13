@@ -9,3 +9,13 @@ logs/
 
 # Ignore config file with sensitive data
 config.py
+
+# Ignore Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Ignore SQLite journal files
+*.db-journal
+*.db-shm
+*.db-wal
