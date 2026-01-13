@@ -147,13 +147,15 @@ def log_received_message(chat_id, chat_title, message_id, message_text, received
     logger.info(f"Logged received message in chat {chat_id}")
 
 # Function to log edited messages
-def log_edited_message(chat_id, chat_title, message_id, old_message_text, new_message_text, edited_at):
+def log_edited_message(chat_id, chat_title, message_id, old_message_text, new_message_text, edited_at, username=None):
     """Log edited messages to a file."""
     ensure_log_dir()
     
     # Create a log entry
+    username_info = f"From User: {username}\n" if username else ""
     log_entry = (
         f"Edited Message in Chat: {chat_title} (ID: {chat_id})\n"
+        f"{username_info}"
         f"Message ID: {message_id}\n"
         f"Old Message: {old_message_text}\n"
         f"New Message: {new_message_text}\n"
@@ -262,7 +264,7 @@ async def handle_edited_message(event):
         old_username = old_message_data[2] if isinstance(old_message_data, tuple) and len(old_message_data) >= 3 else None
         message_history[message_id] = (edited_at, new_message_text, old_username)
         
-        log_edited_message(chat_id, chat_title, message_id, old_message_text, new_message_text, edited_at)
+        log_edited_message(chat_id, chat_title, message_id, old_message_text, new_message_text, edited_at, old_username)
     except Exception as e:
         log_error(f"Error in handle_edited_message: {str(e)}")
 
