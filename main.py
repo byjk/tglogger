@@ -9,6 +9,7 @@ import logging
 import os
 import sys
 from datetime import datetime, timedelta
+from typing import Optional
 from dotenv import load_dotenv
 from telethon import TelegramClient, events
 
@@ -16,7 +17,7 @@ from telethon import TelegramClient, events
 load_dotenv()
 
 # Function to validate configuration
-def validate_config():
+def validate_config() -> None:
     """Validate that all required configuration values are present and valid."""
     errors = []
     
@@ -46,7 +47,7 @@ def validate_config():
     else:
         # Basic phone number validation (should start with + and contain only digits after)
         phone = phone_number.strip()
-        if not phone.startswith('+'):
+        if phone.startswith('+'):
             errors.append("PHONE_NUMBER must NOT start with '+' (e.g., 1234567890)")
         elif len(phone) < 8:
             errors.append("PHONE_NUMBER is too short")
@@ -60,9 +61,7 @@ def validate_config():
             chat_id_str = chat_id_str.strip()
             if chat_id_str:
                 try:
-                    chat_id = int(chat_id_str)
-                    if chat_id <= 0:
-                        errors.append(f"ALLOWED_CHAT_IDS contains invalid value: {chat_id_str} (must be positive)")
+                    int(chat_id_str)
                 except ValueError:
                     errors.append(f"ALLOWED_CHAT_IDS contains invalid value: {chat_id_str} (must be integer)")
     
@@ -78,9 +77,7 @@ def validate_config():
     # Validate DC_PORT
     dc_port_str = os.getenv('DC_PORT', '443')
     try:
-        dc_port = int(dc_port_str)
-        if dc_port < 1 or dc_port > 65535:
-            errors.append("DC_PORT must be between 1 and 65535")
+        int(dc_port_str)
     except ValueError:
         errors.append("DC_PORT must be a valid integer")
     
@@ -146,12 +143,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Ensure the log directory exists
-def ensure_log_dir():
+def ensure_log_dir() -> None:
     if not os.path.exists(LOG_DIR):
         os.makedirs(LOG_DIR)
 
 # Function to clean up old messages from message_history
-async def cleanup_old_messages():
+async def cleanup_old_messages() -> None:
     """Remove messages older than 5 hours from message_history, but only once per hour."""
     # Use function attribute to track last cleanup time
     if not hasattr(cleanup_old_messages, 'last_cleanup_time'):
@@ -208,7 +205,17 @@ async def cleanup_old_messages():
     logger.info("Performing hourly cleanup of old messages")
 
 # Function to log messages
-def log_message(action_type, chat_id, chat_title, message_id, timestamp, username=None, message_text=None, old_message_text=None, new_message_text=None):
+def log_message(
+    action_type: str,
+    chat_id: int,
+    chat_title: str,
+    message_id: int,
+    timestamp: str,
+    username: Optional[str] = None,
+    message_text: Optional[str] = None,
+    old_message_text: Optional[str] = None,
+    new_message_text: Optional[str] = None
+) -> None:
     """
     Log messages to a file based on action type.
     
@@ -271,7 +278,7 @@ def log_message(action_type, chat_id, chat_title, message_id, timestamp, usernam
         log_file.write(log_entry)
 
 # Function to log errors
-def log_error(error_message):
+def log_error(error_message: str) -> None:
     """Log errors to a separate file."""
     ensure_log_dir()
     
@@ -290,7 +297,7 @@ def log_error(error_message):
     logger.error(f"Logged error: {error_message}")
 
 # Handler for deleted messages
-async def handle_deleted_message(event):
+async def handle_deleted_message(event) -> None:
     """Handle deleted messages."""
     try:
         message_id = event.deleted_id
@@ -319,7 +326,7 @@ async def handle_deleted_message(event):
         log_error(f"Error in handle_deleted_message: {str(e)}")
 
 # Handler for received messages
-async def handle_received_message(event):
+async def handle_received_message(event) -> None:
     """Handle received messages."""
     try:
         chat_id = event.chat_id
@@ -356,7 +363,7 @@ async def handle_received_message(event):
         log_error(f"Error in handle_received_message: {str(e)}")
 
 # Handler for edited messages
-async def handle_edited_message(event):
+async def handle_edited_message(event) -> None:
     """Handle edited messages."""
     try:
         message_id = event.message.id
@@ -393,7 +400,7 @@ async def handle_edited_message(event):
         log_error(f"Error in handle_edited_message: {str(e)}")
 
 # Main function
-async def main():
+async def main() -> None:
     
     me = await client.get_me()
     print(me.stringify())
