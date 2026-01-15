@@ -7,8 +7,28 @@ This script connects to the Telegram API using a user account and monitors chats
 import logging
 import os
 from datetime import datetime, timedelta
+from dotenv import load_dotenv
 from telethon import TelegramClient, events
-from config import API_ID, API_HASH, PHONE_NUMBER, TG_PASSWORD, SESSION_NAME, LOG_DIR, DC_ID, DC_IP, DC_PORT, ALLOWED_CHAT_IDS
+
+# Load environment variables from .env file
+load_dotenv()
+
+# Get configuration from environment variables
+API_ID = int(os.getenv('API_ID'))
+API_HASH = os.getenv('API_HASH')
+PHONE_NUMBER = os.getenv('PHONE_NUMBER')
+TG_PASSWORD = os.getenv('TG_PASSWORD') if os.getenv('TG_PASSWORD') else None
+SESSION_NAME = os.getenv('SESSION_NAME', 'tglogger')
+LOG_DIR = os.getenv('LOG_DIR', 'logs')
+
+# Parse ALLOWED_CHAT_IDS from comma-separated string
+ALLOWED_CHAT_IDS_str = os.getenv('ALLOWED_CHAT_IDS', '')
+ALLOWED_CHAT_IDS = [int(chat_id) for chat_id in ALLOWED_CHAT_IDS_str.split(',')] if ALLOWED_CHAT_IDS_str else []
+
+# Telegram DC settings
+DC_ID = int(os.getenv('DC_ID', 2))
+DC_IP = os.getenv('DC_IP', '149.154.167.50')
+DC_PORT = int(os.getenv('DC_PORT', 443))
 
 # Global dictionary to store message history
 message_history = {}

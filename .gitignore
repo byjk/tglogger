@@ -7,8 +7,8 @@ logs/
 # Ignore session files
 *.session
 
-# Ignore config file with sensitive data
-config.py
+# Ignore environment file with sensitive data
+.env
 
 # Ignore Python cache
 __pycache__/
