@@ -106,28 +106,68 @@ async def cleanup_old_messages():
     
     logger.info("Performing hourly cleanup of old messages")
 
-# Function to log deleted messages
-def log_deleted_message(chat_id, chat_title, message_id, message_text, deleted_at, username=None):
-    """Log deleted messages to a file."""
+# Function to log messages
+def log_message(action_type, chat_id, chat_title, message_id, timestamp, username=None, message_text=None, old_message_text=None, new_message_text=None):
+    """
+    Log messages to a file based on action type.
+    
+    Args:
+        action_type: 'deleted', 'received', or 'edited'
+        chat_id: ID of the chat
+        chat_title: Title of the chat
+        message_id: ID of the message
+        timestamp: Timestamp string
+        username: Username of the sender (optional)
+        message_text: Message text (for deleted and received messages)
+        old_message_text: Old message text (for edited messages)
+        new_message_text: New message text (for edited messages)
+    """
     ensure_log_dir()
     
-    # Create a log entry
+    # Create a log entry based on action type
     username_info = f"From User: {username}\n" if username else ""
-    log_entry = (
-        f"Deleted Message in Chat: {chat_title} (ID: {chat_id})\n"
-        f"{username_info}"
-        f"Message ID: {message_id}\n"
-        f"Message: {message_text}\n"
-        f"Deleted At: {deleted_at}\n"
-        f"----------------------------------------\n"
-    )
+    
+    if action_type == 'deleted':
+        log_entry = (
+            f"Deleted Message in Chat: {chat_title} (ID: {chat_id})\n"
+            f"{username_info}"
+            f"Message ID: {message_id}\n"
+            f"Message: {message_text}\n"
+            f"Deleted At: {timestamp}\n"
+            f"----------------------------------------\n"
+        )
+        log_file_path = os.path.join(LOG_DIR, f"{chat_id}_deleted_messages.log")
+        logger.info(f"Logged deleted message in chat {chat_id}")
+    elif action_type == 'received':
+        log_entry = (
+            f"Received Message in Chat: {chat_title} (ID: {chat_id})\n"
+            f"{username_info}"
+            f"Message ID: {message_id}\n"
+            f"Message: {message_text}\n"
+            f"Received At: {timestamp}\n"
+            f"----------------------------------------\n"
+        )
+        log_file_path = os.path.join(LOG_DIR, f"{chat_id}_received_messages.log")
+        logger.info(f"Logged received message in chat {chat_id}")
+    elif action_type == 'edited':
+        log_entry = (
+            f"Edited Message in Chat: {chat_title} (ID: {chat_id})\n"
+            f"{username_info}"
+            f"Message ID: {message_id}\n"
+            f"Old Message: {old_message_text}\n"
+            f"New Message: {new_message_text}\n"
+            f"Edited At: {timestamp}\n"
+            f"----------------------------------------\n"
+        )
+        log_file_path = os.path.join(LOG_DIR, f"{chat_id}_edited_messages.log")
+        logger.info(f"Logged edited message in chat {chat_id}")
+    else:
+        logger.error(f"Unknown action type: {action_type}")
+        return
     
     # Write to log file
-    log_file_path = os.path.join(LOG_DIR, f"{chat_id}_deleted_messages.log")
     with open(log_file_path, 'a', encoding='utf-8') as log_file:
         log_file.write(log_entry)
-    
-    logger.info(f"Logged deleted message in chat {chat_id}")
 
 # Function to log errors
 def log_error(error_message):
@@ -147,53 +187,6 @@ def log_error(error_message):
         log_file.write(log_entry)
     
     logger.error(f"Logged error: {error_message}")
-
-# Function to log received messages
-def log_received_message(chat_id, chat_title, message_id, message_text, received_at, username=None):
-    """Log received messages to a file."""
-    ensure_log_dir()
-    
-    # Create a log entry
-    username_info = f"From User: {username}\n" if username else ""
-    log_entry = (
-        f"Received Message in Chat: {chat_title} (ID: {chat_id})\n"
-        f"{username_info}"
-        f"Message ID: {message_id}\n"
-        f"Message: {message_text}\n"
-        f"Received At: {received_at}\n"
-        f"----------------------------------------\n"
-    )
-    
-    # Write to log file
-    log_file_path = os.path.join(LOG_DIR, f"{chat_id}_received_messages.log")
-    with open(log_file_path, 'a', encoding='utf-8') as log_file:
-        log_file.write(log_entry)
-    
-    logger.info(f"Logged received message in chat {chat_id}")
-
-# Function to log edited messages
-def log_edited_message(chat_id, chat_title, message_id, old_message_text, new_message_text, edited_at, username=None):
-    """Log edited messages to a file."""
-    ensure_log_dir()
-    
-    # Create a log entry
-    username_info = f"From User: {username}\n" if username else ""
-    log_entry = (
-        f"Edited Message in Chat: {chat_title} (ID: {chat_id})\n"
-        f"{username_info}"
-        f"Message ID: {message_id}\n"
-        f"Old Message: {old_message_text}\n"
-        f"New Message: {new_message_text}\n"
-        f"Edited At: {edited_at}\n"
-        f"----------------------------------------\n"
-    )
-    
-    # Write to log file
-    log_file_path = os.path.join(LOG_DIR, f"{chat_id}_edited_messages.log")
-    with open(log_file_path, 'a', encoding='utf-8') as log_file:
-        log_file.write(log_entry)
-    
-    logger.info(f"Logged edited message in chat {chat_id}")
 
 # Handler for deleted messages
 async def handle_deleted_message(event):
@@ -220,7 +213,7 @@ async def handle_deleted_message(event):
         message_text = message_data[1] if isinstance(message_data, tuple) and len(message_data) >= 2 else message_data
         username = message_data[2] if isinstance(message_data, tuple) and len(message_data) >= 3 else None
         
-        log_deleted_message(chat_id, chat_title, message_id, message_text, deleted_at, username)
+        log_message('deleted', chat_id, chat_title, message_id, deleted_at, username, message_text)
     except Exception as e:
         log_error(f"Error in handle_deleted_message: {str(e)}")
 
@@ -257,7 +250,7 @@ async def handle_received_message(event):
         async with message_history_lock:
             message_history[message_id] = (received_at, message_text, username)
         
-        log_received_message(chat_id, chat_title, message_id, message_text, received_at, username)
+        log_message('received', chat_id, chat_title, message_id, received_at, username, message_text)
     except Exception as e:
         log_error(f"Error in handle_received_message: {str(e)}")
 
@@ -294,7 +287,7 @@ async def handle_edited_message(event):
             # Update message in global dictionary as tuple (date, text, username)
             message_history[message_id] = (edited_at, new_message_text, old_username)
         
-        log_edited_message(chat_id, chat_title, message_id, old_message_text, new_message_text, edited_at, old_username)
+        log_message('edited', chat_id, chat_title, message_id, edited_at, old_username, None, old_message_text, new_message_text)
     except Exception as e:
         log_error(f"Error in handle_edited_message: {str(e)}")
 
