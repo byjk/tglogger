@@ -16,6 +16,7 @@ __pycache__/
 *.pyo
 
 # Ignore SQLite journal files
+*.session-journal
 *.db-journal
 *.db-shm
 *.db-wal
