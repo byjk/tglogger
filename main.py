@@ -47,12 +47,12 @@ def validate_config() -> None:
     else:
         # Basic phone number validation (should start with + and contain only digits after)
         phone = phone_number.strip()
-        if phone.startswith('+'):
-            errors.append("PHONE_NUMBER must NOT start with '+' (e.g., 1234567890)")
-        elif len(phone) < 8:
+        if not phone.startswith('+'):
+            errors.append("PHONE_NUMBER must start with '+' (e.g., +1234567890)")
+        elif len(phone) < 9:
             errors.append("PHONE_NUMBER is too short")
-        elif not phone[:].isdigit():
-            errors.append("PHONE_NUMBER must contain only digits")
+        elif not phone[1:].isdigit():
+            errors.append("PHONE_NUMBER must contain only digits after '+'")
     
     # Validate optional ALLOWED_CHAT_IDS
     allowed_chat_ids_str = os.getenv('ALLOWED_CHAT_IDS', '')
